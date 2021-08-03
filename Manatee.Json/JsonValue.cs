@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
@@ -17,9 +17,86 @@ namespace Manatee.Json
 	/// </remarks>
 	public class JsonValue : IEquatable<JsonValue>
 	{
+		private struct NumberValue : IEquatable<NumberValue>
+		{
+			// By default we have a double with value 0
+			// because _isFloat is false
+			private readonly float _floatValue;
+			private readonly double _doubleValue;
+			private readonly bool _isFloat;
+
+			public bool IsFloat => _isFloat;
+
+			public NumberValue(double d)
+			{
+				_floatValue = 0;
+				_doubleValue = d;
+				_isFloat = false;
+			}
+
+			public NumberValue(float f)
+			{
+				_floatValue = f;
+				_doubleValue = 0;
+				_isFloat = true;
+			}
+
+			public static implicit operator NumberValue(float f)
+			{
+				return new NumberValue(f);
+			}
+
+			public static implicit operator NumberValue(double d)
+			{
+				return new NumberValue(d);
+			}
+
+			public override int GetHashCode()
+			{
+				if (_isFloat)
+				{
+					return _floatValue.GetHashCode();
+				}
+				return _doubleValue.GetHashCode();
+			}
+
+			public override bool Equals(object? obj)
+			{
+				if (ReferenceEquals(obj, null)) return false;
+				if (!(obj is NumberValue)) return false;
+				return Equals((NumberValue)obj);
+			}
+
+			public bool Equals(NumberValue other)
+			{
+				return _floatValue.Equals(other._floatValue)
+					&& _doubleValue.Equals(other._doubleValue)
+					&& _isFloat.Equals(other._isFloat);
+			}
+
+			public void AppendString(StringBuilder builder)
+			{
+				if (_isFloat)
+				{
+					builder.AppendFormat(CultureInfo.InvariantCulture, "{0:G9}", _floatValue);
+				}
+				else
+				{
+					builder.AppendFormat(CultureInfo.InvariantCulture, "{0:G17}", _doubleValue);
+				}
+			}
+
+			public double Number => _isFloat ? _floatValue : _doubleValue;
+
+			public float Float => _isFloat ? _floatValue : (float)_doubleValue;
+		}
+
+
+
+
 		private readonly bool _boolValue = default!;
 		private readonly string _stringValue = default!;
-		private readonly double _numberValue = default!;
+		private readonly NumberValue _numberValue = default!;
 		private readonly JsonObject _objectValue = default!;
 		private readonly JsonArray _arrayValue = default!;
 
@@ -78,7 +155,24 @@ namespace Manatee.Json
 			{
 				if (Type != JsonValueType.Number && JsonOptions.ThrowOnIncorrectTypeAccess)
 					throw new JsonValueIncorrectTypeException(Type, JsonValueType.Number);
-				return _numberValue;
+				return _numberValue.Number;
+			}
+		}
+
+		/// <summary>
+		/// Access the <see cref="JsonValue"/> as a float value. This property only works
+		/// as intended if the original JsonValue was constructed from a float. If it was
+		/// constructed froma double that double will be cast to a float.
+		/// </summary>
+		public float Float
+		{
+			get
+			{
+				{
+					if (Type != JsonValueType.Number && _numberValue.IsFloat && JsonOptions.ThrowOnIncorrectTypeAccess)
+						throw new JsonValueIncorrectTypeException(Type, JsonValueType.Number);
+					return _numberValue.Float;
+				}
 			}
 		}
 		/// <summary>
@@ -139,6 +233,13 @@ namespace Manatee.Json
 			_stringValue = s ?? throw new ArgumentNullException(nameof(s));
 			Type = JsonValueType.String;
 		}
+
+		public JsonValue(float f)
+		{
+			_numberValue = f;
+			Type = JsonValueType.Number;
+		}
+
 		/// <summary>
 		/// Creates a <see cref="JsonValue"/> from a numeric value.
 		/// </summary>
@@ -223,7 +324,7 @@ namespace Manatee.Json
 			switch (Type)
 			{
 				case JsonValueType.Number:
-					builder.AppendFormat(CultureInfo.InvariantCulture, "{0}", _numberValue);
+					_numberValue.AppendString(builder);
 					break;
 				case JsonValueType.String:
 					builder.Append('"');
@@ -268,7 +369,7 @@ namespace Manatee.Json
 			switch (Type)
 			{
 				case JsonValueType.Number:
-					return _numberValue.Equals(other.Number);
+					return _numberValue.Equals(other._numberValue);
 				case JsonValueType.String:
 					return _stringValue.Equals(other.String);
 				case JsonValueType.Boolean:
@@ -403,6 +504,30 @@ namespace Manatee.Json
 			return s is null ? null : new JsonValue(s);
 		}
 		/// <summary>
+		/// Implicitly converts a <see cref="float"/> into a <see cref="JsonValue"/>.
+		/// </summary>
+		/// <param name="n">A <see cref="float"/>.</param>
+		/// <returns>A <see cref="JsonValue"/> that represents the <see cref="float"/>.</returns>
+		/// <remarks>
+		/// This is useful when creating an initialized <see cref="JsonObject"/> or <see cref="JsonArray"/>.
+		/// </remarks>
+		/// <example>
+		/// ```
+		/// JsonObject obj = new JsonObject{
+		///		{"stringData", "string"},
+		///		{"numberData", 10.6f},
+		///		{"boolData", true},
+		///		{"arrayData", new JsonArray{false, "Array String", JsonValue.Null, 8e-4}},
+		///		{"objectData", new JsonObject{
+		///			{"stringData2", "another string"},
+		///			{"moreBoolData", false}}}};
+		/// ```
+		/// </example>
+		public static implicit operator JsonValue(float n)
+		{
+			return new JsonValue(n);
+		}
+		/// <summary>
 		/// Implicitly converts a <see cref="double"/> into a <see cref="JsonValue"/>.
 		/// </summary>
 		/// <param name="n">A <see cref="double"/>.</param>
@@ -501,7 +626,11 @@ namespace Manatee.Json
 			switch (Type)
 			{
 				case JsonValueType.Number:
-					return _numberValue;
+					if (_numberValue.IsFloat)
+					{
+						return _numberValue.Float;
+					}
+					return _numberValue.Number;
 				case JsonValueType.String:
 					return _stringValue;
 				case JsonValueType.Boolean:
