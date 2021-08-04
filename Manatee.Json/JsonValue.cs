@@ -234,6 +234,28 @@ namespace Manatee.Json
 			Type = JsonValueType.String;
 		}
 
+		#region Integer Constructors
+		// Now that we explicitly support float, we need all of these constructors
+		// to ensure all non-float numeric types are still considered doubles just
+		// like they would have been prior to the addition of float.
+		public JsonValue(sbyte s) : this((double)s) { }
+		public JsonValue(byte b) : this((double)b) { }
+		public JsonValue(short s) : this((double)s) { }
+		public JsonValue(ushort u) : this((double)u) { }
+		public JsonValue(int i) : this((double)i) { }
+		public JsonValue(uint u) : this((double)u) { }
+		public JsonValue(long l) : this((double)l) { }
+		public JsonValue(ulong u) : this((double)u) { }
+
+		#endregion
+
+		/// <summary>
+		/// Creates a <see cref="JsonValue"/> from a float
+		///
+		/// The JsonValue will remember that this is a float and use that information
+		/// to serialize it differently than a double.
+		/// </summary>
+		/// <param name="f"></param>
 		public JsonValue(float f)
 		{
 			_numberValue = f;
@@ -503,6 +525,53 @@ namespace Manatee.Json
 		{
 			return s is null ? null : new JsonValue(s);
 		}
+
+		#region Integer Implicit Conversions
+		// Now that we explicitly support float, we need all of these implicit operators
+		// to ensure all non-float numeric types are still considered doubles, just as they
+		// would have been prior to the addition of the float implicit conversion.
+		public static implicit operator JsonValue(byte b)
+		{
+			return new JsonValue(b);
+		}
+
+		public static implicit operator JsonValue(sbyte s)
+		{
+			return new JsonValue(s);
+		}
+
+		public static implicit operator JsonValue(short s)
+		{
+			return new JsonValue(s);
+		}
+
+		public static implicit operator JsonValue(ushort u)
+		{
+			return new JsonValue(u);
+		}
+
+		public static implicit operator JsonValue(int i)
+		{
+			return new JsonValue(i);
+		}
+
+		public static implicit operator JsonValue(uint u)
+		{
+			return new JsonValue(u);
+		}
+
+		public static implicit operator JsonValue(long l)
+		{
+			return new JsonValue(l);
+		}
+
+		public static implicit operator JsonValue(ulong u)
+		{
+			return new JsonValue(u);
+		}
+
+		#endregion
+
 		/// <summary>
 		/// Implicitly converts a <see cref="float"/> into a <see cref="JsonValue"/>.
 		/// </summary>
