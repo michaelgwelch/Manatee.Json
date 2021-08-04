@@ -16,7 +16,10 @@ namespace Manatee.Json.Tests.Path
 	[TestFixture]
 	public class CburgmerFeatureValidationTests
 	{
-		private const string _regressionResultsFile = @"..\..\..\..\json-path-comparison\regression_suite\regression_suite.yaml";
+		// This file copied from the referenced repo and added to this repo for easier consumptioni
+
+		private static readonly string _regressionResultsFile = System.IO.Path.Combine(Environment.CurrentDirectory, "Files", "Cburgmer", "regression_suite.yaml");
+		//private const string _regressionResultsFile = @"Files\Cburgmer\regression_suite.yaml";
 		private static readonly Regex _idPattern = new Regex(@"  - id: (?<value>.*)");
 		private static readonly Regex _selectorPattern = new Regex(@"    selector: ""(?<value>.*)""");
 		private static readonly Regex _documentPattern = new Regex(@"    document: (?<value>.*)");
