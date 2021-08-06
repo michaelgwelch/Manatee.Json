@@ -1,3 +1,20 @@
+# JCI Fork of Manatee.Json
+
+This project from https://github.com/gregsdennis/Manatee.Json was forked to meet our needs.
+
+Manatee.Json uses a model for JSON values that converts all numbers to doubles. This is problematic because when we serialize to JSON strings the original `float` values often appear to have more digits of precision than is possible for a `float` and certainly more digits of precision than they originally had. This is problematic for data integrity.
+
+Since Manatee.Json is an archived project, it was felt it is safe to fork it for our needs. In the future we should plan to remove our dependency on Manatee.Json. But this stop gap fork will meet our needs for now.
+
+The intent of the fork:
+
+* Preserve all `float` values as floats.
+* Continue to cast all integer types to doubles. This is done to minimize the impact to all of the unit tests.
+* When serializing `JsonValue` instances, ensure that floats are serialized with G9 format specifier and doubles with G17 format specifier.
+* When accessing raw values from `JsonValue` instances, mark the old accessors as obsolete as they will coerce all raw values to be `double` values which defeats the purpose. These accessors were left in place to satisfy all the unit tests. New accessors are provides which give us a safe way to retrieve either a `float` or a `double` depending on how it was created.
+
+# Original README
+
 After careful consideration, I may be halting development for this library in favor of a [new suite of libraries](https://graphqello.com) that provide the same functionality using the `System.Text.Json` namespace.
 
 Thank you to all those who helped make this library better through code contributions, bug reports, and feature suggestions.
